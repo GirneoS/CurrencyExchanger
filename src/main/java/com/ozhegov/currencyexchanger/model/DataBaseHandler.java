@@ -35,7 +35,8 @@ public class DataBaseHandler {
                 String fullName = resultSet.getString("FullName");
                 String sign = resultSet.getString("Sign");
 
-                Currency currency = new Currency(id, code, fullName, sign);
+                Currency currency = new Currency(code, fullName, sign);
+                currency.setId(id);
 
                 list.add(currency);
             }
@@ -60,17 +61,17 @@ public class DataBaseHandler {
                 String fullName = resultSet.getString("FullName");
                 String sign = resultSet.getString("Sign");
 
-                reqCurrency = new Currency(id, code, fullName, sign);
+                reqCurrency = new Currency(code, fullName, sign);
+                reqCurrency.setId(id);
             }
         }catch(SQLException e){
             e.printStackTrace();
         }
         return reqCurrency;
     }
-    public boolean createNewCurrency(Currency currency){
+    public boolean insertCurrency(Currency currency){
         boolean result = false;
         try {
-
             String code = currency.getCode();
             String fullName = currency.getFullName();
             String sign = currency.getSign();
@@ -82,6 +83,8 @@ public class DataBaseHandler {
             statement.setString(2,fullName);
             statement.setString(3,sign);
 
+
+            currency.setId(getLastCurrId()+1);
             if(statement.executeUpdate()>0){
                 result = true;
             }
@@ -89,6 +92,20 @@ public class DataBaseHandler {
             e.printStackTrace();
         }
         return result;
+    }
+    public int getLastCurrId(){
+        int lastID = -1;
+        try {
+            Statement statement = connection.createStatement();
+
+            ResultSet resultSet = statement.executeQuery("SELECT MAX(rowid) AS last_ID from Currencies");
+
+            resultSet.next();
+            lastID = resultSet.getInt("last_ID");
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        return lastID;
     }
     public List<ExchangeRate> findAllExchangeRates(){
         List<ExchangeRate> listOfRates = new ArrayList<>();
@@ -118,6 +135,7 @@ public class DataBaseHandler {
 
                 ExchangeRate exchangeRate = new ExchangeRate(baseCurrency, targetCurrency, rate);
 
+                exchangeRate.setID(id);
                 listOfRates.add(exchangeRate);
             }
 
@@ -168,15 +186,34 @@ public class DataBaseHandler {
         }
         return lastID;
     }
+    public ExchangeRate updateRate(ExchangeRate exchangeRate, double rate){
+        ExchangeRate updatedExchangeRate = null;
+        try {
+            String query = "UPDATE ExchangeRates SET Rate=? WHERE ID=?";
+            PreparedStatement statement = connection.prepareStatement(query);
+
+            statement.setDouble(1,rate);
+            statement.setInt(2,exchangeRate.getID());
+
+            if (statement.executeUpdate()>0){
+                exchangeRate.setRate(rate);
+                updatedExchangeRate = exchangeRate;
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+
+        return updatedExchangeRate;
+    }
     public ExchangeRate findExchangeRate(String nameRate) {
         List<ExchangeRate> rateList = findAllExchangeRates();
 
         ExchangeRate rate = rateList.stream()
                 .filter(r -> r.toString().equals(nameRate))
                 .findAny()
-                .orElse(new ExchangeRate(new Currency(-1, "", "", ""), new Currency(-1, "", "", ""), 0));
+                .orElse(new ExchangeRate(new Currency("", "", ""), new Currency("", "", ""), 0));
 
-        if (rate.getBaseCurrency().getId() == -1) {
+        if (rate.getBaseCurrency().getCode().isEmpty()) {
             StringBuilder revNameRate = new StringBuilder();
 
             revNameRate.append(nameRate, 3, nameRate.length());

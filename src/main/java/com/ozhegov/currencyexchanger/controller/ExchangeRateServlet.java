@@ -57,21 +57,28 @@ public class ExchangeRateServlet extends HttpServlet {
         if(baseCurrency==null || targetCurrency==null){
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             resp.getWriter().write("Одна (или обе) валюта из валютной пары не существует в БД");
-        }
-
-        ExchangeRate exchangeRate = new ExchangeRate(baseCurrency, targetCurrency, Double.parseDouble(rate));
-
-        if(handler.insertExchangeRate(exchangeRate)){
-            resp.setContentType("text/json");
-            Gson gson = new Gson();
-            String json = gson.toJson(exchangeRate);
-
-            resp.setStatus(HttpServletResponse.SC_CREATED);
-            resp.getWriter().write(json);
         }else{
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write("Ошибка");
-        }
 
+            if(handler.findExchangeRate(baseCode+targetCode)!=null){
+                resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                resp.getWriter().write("Валютная пара с таким кодом уже существует");
+            }else {
+
+                ExchangeRate exchangeRate = new ExchangeRate(baseCurrency, targetCurrency, Double.parseDouble(rate));
+
+                if (handler.insertExchangeRate(exchangeRate)) {
+                    resp.setContentType("text/json");
+                    Gson gson = new Gson();
+                    String json = gson.toJson(exchangeRate);
+
+                    resp.setStatus(HttpServletResponse.SC_CREATED);
+                    resp.getWriter().write(json);
+                } else {
+                    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    resp.getWriter().write("Ошибка");
+                }
+            }
+        }
     }
+
 }

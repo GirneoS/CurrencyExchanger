@@ -11,9 +11,19 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import javax.xml.crypto.Data;
 import java.io.IOException;
+import java.util.Arrays;
 
 @WebServlet("/api/exchangeRate/*")
 public class SingleExchangeRateServlet extends HttpServlet {
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if(req.getMethod().equals("PATCH")){
+            doPatch(req, resp);
+        }else{
+            super.service(req, resp);
+        }
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/json");
@@ -26,16 +36,46 @@ public class SingleExchangeRateServlet extends HttpServlet {
         ExchangeRate rate = handler.findExchangeRate(strRate);
 
         if(rate==null){
-            System.out.println("a");
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }else{
-            System.out.println("b");
             resp.setStatus(HttpServletResponse.SC_OK);
 
             Gson gson = new Gson();
             String jsonResp = gson.toJson(rate);
 
             resp.getWriter().write(jsonResp);
+        }
+    }
+
+    protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String pathInfo = req.getPathInfo();
+
+        DataBaseHandler handler = new DataBaseHandler();
+        ExchangeRate exchangeRate = handler.findExchangeRate(pathInfo.substring(1));
+
+        String strRateParam = req.getParameter("rate");
+
+        if (strRateParam == null) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("Отсутствует нужное поле формы");
+        } else {
+
+            double newRate = Double.parseDouble(strRateParam);
+
+
+            ExchangeRate updatedRate = handler.updateRate(exchangeRate, newRate);
+            if (updatedRate != null) {
+                resp.setStatus(HttpServletResponse.SC_OK);
+
+                resp.setContentType("text/json");
+                Gson gson = new Gson();
+
+                String json = gson.toJson(updatedRate);
+                resp.getWriter().write(json);
+            }else{
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                resp.getWriter().write("Валютная пара отсутствует в базе данных");
+            }
         }
     }
 

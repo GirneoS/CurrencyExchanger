@@ -34,6 +34,10 @@ public class ExchangeRate {
         this.ID = ID;
     }
 
+    public void setRate(double rate) {
+        this.rate = rate;
+    }
+
     @Override
     public String toString() {
         return baseCurrency.getCode() + targetCurrency.getCode();

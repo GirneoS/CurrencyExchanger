@@ -19,19 +19,31 @@ public class SingleCurrencyServlet extends HttpServlet {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
-        String pathInfo = req.getPathInfo();
-        String currencyCode = pathInfo.substring(1);
+        if(req.getPathInfo().isEmpty() || req.getPathInfo().equals("/")){
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("Код валюты отсутствует в адресе");
+        }else {
 
-        DataBaseHandler handler = new DataBaseHandler();
-        List<Currency> list = handler.findAllCurrencies();
+            String pathInfo = req.getPathInfo();
+            String currencyCode = pathInfo.substring(1);
 
-        Currency currency = list.stream()
-                .filter(c -> Objects.equals(c.getCode(), currencyCode))
-                .findFirst().orElse(null);
+            DataBaseHandler handler = new DataBaseHandler();
+            List<Currency> list = handler.findAllCurrencies();
 
-        Gson gson = new Gson();
-        String json = gson.toJson(currency);
+            Currency currency = list.stream()
+                    .filter(c -> Objects.equals(c.getCode(), currencyCode))
+                    .findFirst().orElse(null);
 
-        resp.getWriter().write(json);
+            if (currency==null){
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                resp.getWriter().write("Валюта не найдена");
+            }else {
+
+                Gson gson = new Gson();
+                String json = gson.toJson(currency);
+
+                resp.getWriter().write(json);
+            }
+        }
     }
 }
