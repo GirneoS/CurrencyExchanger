@@ -1,8 +1,10 @@
-package com.ozhegov.currencyexchanger.controller;
+package com.girneos.currencyexchanger.controller;
 
+import com.girneos.currencyexchanger.controller.dao.CurrencyDAO;
+import com.girneos.currencyexchanger.controller.dao.DAO;
+import com.girneos.currencyexchanger.model.Message;
 import com.google.gson.Gson;
-import com.ozhegov.currencyexchanger.model.Currency;
-import com.ozhegov.currencyexchanger.model.DataBaseHandler;
+import com.girneos.currencyexchanger.model.Currency;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,14 +23,14 @@ public class SingleCurrencyServlet extends HttpServlet {
 
         if(req.getPathInfo().isEmpty() || req.getPathInfo().equals("/")){
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("Код валюты отсутствует в адресе");
+            resp.getWriter().write(new Gson().toJson(new Message("Код валюты отсутствует в адресе")));
         }else {
 
             String pathInfo = req.getPathInfo();
             String currencyCode = pathInfo.substring(1);
 
-            DataBaseHandler handler = new DataBaseHandler();
-            List<Currency> list = handler.findAllCurrencies();
+            DAO<Currency> currencyDAO = new CurrencyDAO();
+            List<Currency> list = currencyDAO.getAll();
 
             Currency currency = list.stream()
                     .filter(c -> Objects.equals(c.getCode(), currencyCode))
@@ -36,7 +38,7 @@ public class SingleCurrencyServlet extends HttpServlet {
 
             if (currency==null){
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write("Валюта не найдена");
+                resp.getWriter().write(new Gson().toJson(new Message("Валюта не найдена")));
             }else {
 
                 Gson gson = new Gson();

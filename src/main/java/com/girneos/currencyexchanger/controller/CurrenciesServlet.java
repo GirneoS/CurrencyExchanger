@@ -1,13 +1,13 @@
-package com.ozhegov.currencyexchanger.controller;
+package com.girneos.currencyexchanger.controller;
 
 import java.io.*;
-import java.lang.ref.PhantomReference;
 import java.util.List;
 
+import com.girneos.currencyexchanger.controller.dao.CurrencyDAO;
+import com.girneos.currencyexchanger.model.Message;
 import com.google.gson.Gson;
-import com.ozhegov.currencyexchanger.model.DataBaseHandler;
-import com.ozhegov.currencyexchanger.model.Currency;
-import jakarta.servlet.ServletException;
+import com.girneos.currencyexchanger.controller.dao.DAO;
+import com.girneos.currencyexchanger.model.Currency;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 
@@ -21,13 +21,13 @@ public class CurrenciesServlet extends HttpServlet {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
-        DataBaseHandler handler = new DataBaseHandler();
-        List<Currency> list = handler.findAllCurrencies();
+        DAO<Currency> currencyDAO = new CurrencyDAO();
+        List<Currency> list = currencyDAO.getAll();
 
         if (list.isEmpty()){
 
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-
+            resp.getWriter().write(new Gson().toJson(new Message("Ошибка")));
         }else {
 
             Gson gson = new Gson();
@@ -39,38 +39,39 @@ public class CurrenciesServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("text/json");
+
         String code = req.getParameter("code");
         String fullName = req.getParameter("name");
         String sign = req.getParameter("sign");
 
         if(code == null || fullName == null || sign == null){
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("Отсутствует нужное поле формы");
-        }else {
-            DataBaseHandler handler = new DataBaseHandler();
 
-            if(handler.findCurrencyByCode(code)!=null){
+            Message message = new Message("Отсутствует нужное поле формы");
+            resp.getWriter().write(new Gson().toJson(message));
+        }else {
+            DAO<Currency> currencyDAO = new CurrencyDAO();
+
+            if(currencyDAO.get(code)!=null){
 
                 resp.setStatus(HttpServletResponse.SC_CONFLICT);
 
-                resp.setContentType("text/json");
-                Gson gson = new Gson();
-                resp.getWriter().write(gson.toJson("Валюта с таким кодом уже существует"));
+                Message message = new Message("Валюта с таким кодом уже существует");
+                resp.getWriter().write(new Gson().toJson(message));
 
             }else {
-                resp.setContentType("text/json");
                 Currency currency = new Currency(code, fullName, sign);
 
-                if (handler.insertCurrency(currency)) {
+                if (currencyDAO.save(currency)) {
                     resp.setStatus(HttpServletResponse.SC_CREATED);
 
-                    Gson gson = new Gson();
-                    String json = gson.toJson(currency);
 
-                    resp.getWriter().write(json);
+                    resp.getWriter().write(new Gson().toJson(currency));
                 } else {
                     resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                    resp.getWriter().write("Ошибка");
+
+                    resp.getWriter().write(new Gson().toJson(new Message("Ошибка")));
                 }
 
             }

@@ -1,9 +1,11 @@
-package com.ozhegov.currencyexchanger.controller;
+package com.girneos.currencyexchanger.controller;
 
+import com.girneos.currencyexchanger.controller.dao.DAO;
+import com.girneos.currencyexchanger.controller.dao.ExchangeRateDAO;
+import com.girneos.currencyexchanger.model.ExchangeRate;
+import com.girneos.currencyexchanger.model.ExchangeOperation;
+import com.girneos.currencyexchanger.model.Message;
 import com.google.gson.Gson;
-import com.ozhegov.currencyexchanger.model.DataBaseHandler;
-import com.ozhegov.currencyexchanger.model.dto.ExchangeOperationDTO;
-import com.ozhegov.currencyexchanger.model.ExchangeRate;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -16,6 +18,7 @@ import java.io.IOException;
 public class ExchangeServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("text/json");
         String from = req.getParameter("from");
         String to = req.getParameter("to");
         String amountStr = req.getParameter("amount");
@@ -23,42 +26,33 @@ public class ExchangeServlet extends HttpServlet {
         if(from == null || to == null || amountStr == null){
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
-            String message = "Отсутствует нужное поле формы";
-            Gson gson = new Gson();
-            String json = gson.toJson(message);
-
-            resp.getWriter().write(json);
+            resp.getWriter().write(new Gson().toJson(new Message("Отсутствует нужное поле формы")));
         }else{
             double amount = Double.parseDouble(amountStr);
 
-            DataBaseHandler handler = new DataBaseHandler();
+            DAO<ExchangeRate> exchangeRateDAO = new ExchangeRateDAO();
 
-            ExchangeRate exchangeRate = handler.findExchangeRate(from+to);
+            ExchangeRate exchangeRate = exchangeRateDAO.get(from+to);
             if(exchangeRate==null){
-                /*
-                Если такой пары не существует в БД, то делаем обмен через валютные пары с USD.
-                 */
-                ExchangeRate exchangeRateFrom = handler.findExchangeRate(from+"USD");
-                ExchangeRate exchangeRateTo = handler.findExchangeRate("USD"+to);
+                ExchangeRate exchangeRateFrom = exchangeRateDAO.get(from+"USD");
+                ExchangeRate exchangeRateTo = exchangeRateDAO.get("USD"+to);
 
                 double convertedAmount = exchangeRateFrom.getRate()*amount*exchangeRateTo.getRate();
-                ExchangeOperationDTO exchangeOperationDTO = new ExchangeOperationDTO(exchangeRateFrom.getBaseCurrency(), exchangeRateTo.getTargetCurrency(), convertedAmount/amount, amount, convertedAmount);
+                ExchangeOperation exchangeOperation = new ExchangeOperation(exchangeRateFrom.getBaseCurrency(), exchangeRateTo.getTargetCurrency(), convertedAmount/amount, amount, convertedAmount);
 
                 Gson gson = new Gson();
-                String json = gson.toJson(exchangeOperationDTO);
+                String json = gson.toJson(exchangeOperation);
 
-                resp.setContentType("text/json");
                 resp.getWriter().write(json);
 
             }else{
 
                 double convertedAmount = amount* exchangeRate.getRate();
-                ExchangeOperationDTO exchangeOperationDTO = new ExchangeOperationDTO(exchangeRate.getBaseCurrency(),exchangeRate.getTargetCurrency(),exchangeRate.getRate(),amount,convertedAmount);
+                ExchangeOperation exchangeOperation = new ExchangeOperation(exchangeRate.getBaseCurrency(),exchangeRate.getTargetCurrency(),exchangeRate.getRate(),amount,convertedAmount);
 
                 Gson gson = new Gson();
-                String json = gson.toJson(exchangeOperationDTO);
+                String json = gson.toJson(exchangeOperation);
 
-                resp.setContentType("text/json");
                 resp.getWriter().write(json);
             }
         }

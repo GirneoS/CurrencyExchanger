@@ -1,20 +1,19 @@
-package com.ozhegov.currencyexchanger.controller;
+package com.girneos.currencyexchanger.controller;
 
+import com.girneos.currencyexchanger.controller.dao.CurrencyDAO;
+import com.girneos.currencyexchanger.controller.dao.DAO;
+import com.girneos.currencyexchanger.controller.dao.ExchangeRateDAO;
+import com.girneos.currencyexchanger.model.ExchangeRate;
+import com.girneos.currencyexchanger.model.Message;
 import com.google.gson.Gson;
-import com.ozhegov.currencyexchanger.model.Currency;
-import com.ozhegov.currencyexchanger.model.DataBaseHandler;
-import com.ozhegov.currencyexchanger.model.ExchangeRate;
-import jakarta.servlet.ServletException;
+import com.girneos.currencyexchanger.model.Currency;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @WebServlet("/api/exchangeRates")
 public class ExchangeRateServlet extends HttpServlet {
@@ -23,9 +22,9 @@ public class ExchangeRateServlet extends HttpServlet {
         resp.setContentType("text/json");
         resp.setCharacterEncoding("UTF-8");
 
-        DataBaseHandler handler = new DataBaseHandler();
+        DAO<ExchangeRate> exchangeRateDAO = new ExchangeRateDAO();
 
-        List<ExchangeRate> ratesList = handler.findAllExchangeRates();
+        List<ExchangeRate> ratesList = exchangeRateDAO.getAll();
         if(!ratesList.isEmpty()) {
 
             Gson gson = new Gson();
@@ -34,40 +33,43 @@ public class ExchangeRateServlet extends HttpServlet {
             resp.getWriter().write(textJson);
         }else{
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write("Произошла ошибка на стороне сервера!");
+            resp.getWriter().write(new Gson().toJson(new Message("Ошибка")));
         }
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("text/json");
+
         String baseCode = req.getParameter("baseCurrencyCode");
         String targetCode = req.getParameter("targetCurrencyCode");
         String rate = req.getParameter("rate");
 
+
         if(baseCode.isEmpty() || targetCode.isEmpty() || rate.isEmpty()){
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("Отсутствует нужное поле формы");
+            resp.getWriter().write(new Gson().toJson(new Message("Отсутствует нужное поле формы")));
         }
 
-        DataBaseHandler handler = new DataBaseHandler();
+        DAO<Currency> currencyDAO = new CurrencyDAO();
+        DAO<ExchangeRate> exchangeRateDAO = new ExchangeRateDAO();
 
-        Currency baseCurrency = handler.findCurrencyByCode(baseCode);
-        Currency targetCurrency = handler.findCurrencyByCode(targetCode);
+        Currency baseCurrency = currencyDAO.get(baseCode);
+        Currency targetCurrency = currencyDAO.get(targetCode);
 
         if(baseCurrency==null || targetCurrency==null){
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            resp.getWriter().write("Одна (или обе) валюта из валютной пары не существует в БД");
+            resp.getWriter().write(new Gson().toJson(new Message("Одна (или обе) валюта из валютной пары не существует в БД")));
         }else{
 
-            if(handler.findExchangeRate(baseCode+targetCode)!=null){
+            if(exchangeRateDAO.get(baseCode+targetCode)!=null){
                 resp.setStatus(HttpServletResponse.SC_CONFLICT);
-                resp.getWriter().write("Валютная пара с таким кодом уже существует");
+                resp.getWriter().write(new Gson().toJson(new Message("Валютная пара с таким кодом уже существует")));
             }else {
 
                 ExchangeRate exchangeRate = new ExchangeRate(baseCurrency, targetCurrency, Double.parseDouble(rate));
 
-                if (handler.insertExchangeRate(exchangeRate)) {
-                    resp.setContentType("text/json");
+                if (exchangeRateDAO.save(exchangeRate)) {
                     Gson gson = new Gson();
                     String json = gson.toJson(exchangeRate);
 
@@ -75,7 +77,7 @@ public class ExchangeRateServlet extends HttpServlet {
                     resp.getWriter().write(json);
                 } else {
                     resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                    resp.getWriter().write("Ошибка");
+                    resp.getWriter().write(new Gson().toJson(new Message("Ошибка")));
                 }
             }
         }

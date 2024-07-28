@@ -1,6 +1,6 @@
-package com.ozhegov.currencyexchanger.controller.dao;
+package com.girneos.currencyexchanger.controller.dao;
 
-import com.ozhegov.currencyexchanger.model.Currency;
+import com.girneos.currencyexchanger.model.Currency;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -69,8 +69,8 @@ public class CurrencyDAO implements DAO<Currency> {
     }
 
     @Override
-    public void update(Currency currency, double rate) {
-
+    public Currency update(Currency currency, double rate) {
+        return null;
     }
 
     @Override
@@ -102,6 +102,17 @@ public class CurrencyDAO implements DAO<Currency> {
 
     @Override
     public int getLastId() {
-        return 0;
+        int lastID = -1;
+        try(Connection connection = DriverManager.getConnection(url)) {
+            Statement statement = connection.createStatement();
+
+            ResultSet resultSet = statement.executeQuery("SELECT MAX(rowid) AS last_ID from Currencies");
+
+            resultSet.next();
+            lastID = resultSet.getInt("last_ID");
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        return lastID;
     }
 }

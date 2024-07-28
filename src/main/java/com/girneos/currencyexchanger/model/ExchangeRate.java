@@ -1,6 +1,4 @@
-package com.ozhegov.currencyexchanger.model;
-
-import javax.xml.crypto.Data;
+package com.girneos.currencyexchanger.model;
 
 public class ExchangeRate {
     private int ID;

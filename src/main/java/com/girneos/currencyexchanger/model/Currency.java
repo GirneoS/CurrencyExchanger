@@ -1,4 +1,4 @@
-package com.ozhegov.currencyexchanger.model;
+package com.girneos.currencyexchanger.model;
 
 public class Currency {
     private int id;

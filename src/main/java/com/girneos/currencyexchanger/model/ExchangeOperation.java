@@ -1,8 +1,6 @@
-package com.girneos.currencyexchanger.model.dto;
+package com.girneos.currencyexchanger.model;
 
-import com.girneos.currencyexchanger.model.Currency;
-
-public class ExchangeOperationDTO {
+public class ExchangeOperation {
     private Currency baseCurrency;
     private Currency targetCurrency;
     private double rate;
@@ -10,7 +8,7 @@ public class ExchangeOperationDTO {
     private double convertedAmount;
 
 
-    public ExchangeOperationDTO(Currency baseCurrency, Currency targetCurrency, double rate, double amount, double convertedAmount) {
+    public ExchangeOperation(Currency baseCurrency, Currency targetCurrency, double rate, double amount, double convertedAmount) {
         this.baseCurrency = baseCurrency;
         this.targetCurrency = targetCurrency;
         this.rate = rate;

@@ -1,7 +1,7 @@
-package com.ozhegov.currencyexchanger.controller.dao;
+package com.girneos.currencyexchanger.controller.dao;
 
-import com.ozhegov.currencyexchanger.model.Currency;
-import com.ozhegov.currencyexchanger.model.ExchangeRate;
+import com.girneos.currencyexchanger.model.Currency;
+import com.girneos.currencyexchanger.model.ExchangeRate;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -32,7 +32,8 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
                 double rate = resultSet.getDouble("Rate");
 
 
-                List<Currency> listOfCurrencies = findAllCurrencies();
+                CurrencyDAO currencyDAO = new CurrencyDAO();
+                List<Currency> listOfCurrencies = currencyDAO.getAll();
 
                 Currency baseCurrency = listOfCurrencies.stream()
                         .filter(c->c.getId()==baseCurrencyID)
@@ -59,17 +60,94 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
 
     @Override
     public ExchangeRate get(String reqCode) {
-        return null;
+        List<ExchangeRate> rateList = getAll();
+
+        ExchangeRate rate = rateList.stream()
+                .filter(r -> r.toString().equals(reqCode))
+                .findAny()
+                .orElse(new ExchangeRate(new Currency("", "", ""), new Currency("", "", ""), 0));
+
+        if (rate.getBaseCurrency().getCode().isEmpty()) {
+            StringBuilder revNameRate = new StringBuilder();
+
+            revNameRate.append(reqCode, 3, reqCode.length());
+            revNameRate.append(reqCode, 0, 3);
+
+            rate = rateList.stream()
+                    .filter(r -> r.toString().contentEquals(revNameRate.toString()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (rate != null) {
+                return new ExchangeRate(rate.getTargetCurrency(), rate.getBaseCurrency(), Math.pow(rate.getRate(), -1));
+            }
+        }
+
+        return rate;
     }
 
     @Override
-    public void update(ExchangeRate exchangeRate, double rate) {
+    public ExchangeRate update(ExchangeRate exchangeRate, double rate) {
+        ExchangeRate updatedExchangeRate = null;
+        try(Connection connection = DriverManager.getConnection(url)) {
 
+            String query = "UPDATE ExchangeRates SET Rate=? WHERE ID=?";
+            PreparedStatement statement = connection.prepareStatement(query);
+
+            statement.setDouble(1,rate);
+            statement.setInt(2,exchangeRate.getID());
+
+            if (statement.executeUpdate()>0){
+                exchangeRate.setRate(rate);
+                updatedExchangeRate = exchangeRate;
+            }else{
+                String reverseQuery = "UPDATE ExchangeRates SET Rate=? WHERE BaseCurrencyId=? AND TargetCurrencyId=?";
+                PreparedStatement reverseStatement = connection.prepareStatement(reverseQuery);
+
+                reverseStatement.setDouble(1,Math.pow(rate,-1));
+                reverseStatement.setInt(2,exchangeRate.getTargetCurrency().getId());
+                reverseStatement.setInt(3,exchangeRate.getBaseCurrency().getId());
+
+                if(reverseStatement.executeUpdate()>0){
+                    exchangeRate.setRate(rate);
+                    updatedExchangeRate = exchangeRate;
+                }
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+
+        return updatedExchangeRate;
     }
 
     @Override
     public boolean save(ExchangeRate exchangeRate) {
+        boolean result = false;
 
+        try(Connection connection = DriverManager.getConnection(url)) {
+
+            exchangeRate.setID(getLastId()+1);
+            int baseCurrencyID = exchangeRate.getBaseCurrency().getId();
+            int targetCurrencyID = exchangeRate.getTargetCurrency().getId();
+            double rate = exchangeRate.getRate();
+
+
+            String query = "INSERT INTO ExchangeRates(BaseCurrencyID, TargetCurrencyID, Rate) " +
+                    "VALUES (?, ?, ?)";
+
+            PreparedStatement statement = connection.prepareStatement(query);
+
+            statement.setInt(1,baseCurrencyID);
+            statement.setInt(2,targetCurrencyID);
+            statement.setDouble(3,rate);
+
+            if(statement.executeUpdate()>0){
+                result = true;
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+        return result;
     }
 
     @Override
