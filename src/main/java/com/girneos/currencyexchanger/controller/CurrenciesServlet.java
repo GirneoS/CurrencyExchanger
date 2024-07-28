@@ -43,7 +43,7 @@ public class CurrenciesServlet extends HttpServlet {
         String fullName = req.getParameter("name");
         String sign = req.getParameter("sign");
 
-        if(code.isEmpty() || fullName.isEmpty() || sign.isEmpty()){
+        if(code == null || fullName == null || sign == null){
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write("Отсутствует нужное поле формы");
         }else {
@@ -52,14 +52,16 @@ public class CurrenciesServlet extends HttpServlet {
             if(handler.findCurrencyByCode(code)!=null){
 
                 resp.setStatus(HttpServletResponse.SC_CONFLICT);
-                resp.getWriter().write("Валюта с таким кодом уже существует");
+
+                resp.setContentType("text/json");
+                Gson gson = new Gson();
+                resp.getWriter().write(gson.toJson("Валюта с таким кодом уже существует"));
 
             }else {
-
+                resp.setContentType("text/json");
                 Currency currency = new Currency(code, fullName, sign);
 
                 if (handler.insertCurrency(currency)) {
-                    resp.setContentType("text/json");
                     resp.setStatus(HttpServletResponse.SC_CREATED);
 
                     Gson gson = new Gson();
@@ -73,8 +75,10 @@ public class CurrenciesServlet extends HttpServlet {
 
             }
         }
+
     }
 
     public void destroy() {
+        super.destroy();
     }
 }

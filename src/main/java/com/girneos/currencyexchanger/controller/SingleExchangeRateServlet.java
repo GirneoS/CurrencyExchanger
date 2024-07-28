@@ -28,26 +28,31 @@ public class SingleExchangeRateServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/json");
         resp.setCharacterEncoding("UTF-8");
+        Gson gson = new Gson();
 
         String pathInfo = req.getPathInfo();
         String strRate = pathInfo.substring(1);
 
         DataBaseHandler handler = new DataBaseHandler();
-        ExchangeRate rate = handler.findExchangeRate(strRate);
+        ExchangeRate exchangeRate = handler.findExchangeRate(strRate);
 
-        if(rate==null){
+        if(exchangeRate==null){
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+
+            resp.getWriter().write(gson.toJson("Валютная пара с таким кодом не найдена"));
         }else{
             resp.setStatus(HttpServletResponse.SC_OK);
 
-            Gson gson = new Gson();
-            String jsonResp = gson.toJson(rate);
+            String jsonResp = gson.toJson(exchangeRate);
 
             resp.getWriter().write(jsonResp);
         }
     }
 
     protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("text/json");
+        Gson gson = new Gson();
+
         String pathInfo = req.getPathInfo();
 
         DataBaseHandler handler = new DataBaseHandler();
@@ -57,7 +62,8 @@ public class SingleExchangeRateServlet extends HttpServlet {
 
         if (strRateParam == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("Отсутствует нужное поле формы");
+
+            resp.getWriter().write(gson.toJson("Отсутствует нужное поле формы"));
         } else {
 
             double newRate = Double.parseDouble(strRateParam);
@@ -67,14 +73,12 @@ public class SingleExchangeRateServlet extends HttpServlet {
             if (updatedRate != null) {
                 resp.setStatus(HttpServletResponse.SC_OK);
 
-                resp.setContentType("text/json");
-                Gson gson = new Gson();
-
                 String json = gson.toJson(updatedRate);
                 resp.getWriter().write(json);
             }else{
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write("Валютная пара отсутствует в базе данных");
+
+                resp.getWriter().write(gson.toJson("Валютная пара отсутствует в базе данных"));
             }
         }
     }
