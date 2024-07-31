@@ -11,7 +11,7 @@ import com.girneos.currencyexchanger.model.Currency;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 
-@WebServlet("/api/currencies")
+@WebServlet("/currencies")
 public class CurrenciesServlet extends HttpServlet {
 
     public void init() {
