@@ -17,6 +17,7 @@ import java.sql.SQLException;
 @WebServlet("/exchange")
 public class ExchangeServlet extends HttpServlet {
     private ExchangeOperationService service;
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/json");
@@ -24,11 +25,11 @@ public class ExchangeServlet extends HttpServlet {
         String to = req.getParameter("to");
         String amountStr = req.getParameter("amount");
 
-        if(from == null || to == null || amountStr == null){
+        if (from == null || to == null || amountStr == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
             resp.getWriter().write(new Gson().toJson(new Message("Отсутствует нужное поле формы")));
-        }else{
+        } else {
             try {
                 double amount = Double.parseDouble(amountStr);
                 service = new ExchangeOperationService();

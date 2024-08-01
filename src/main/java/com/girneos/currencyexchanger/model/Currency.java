@@ -34,6 +34,6 @@ public class Currency {
 
     @Override
     public String toString() {
-        return "id="+id+"; code="+code;
+        return "id=" + id + "; code=" + code;
     }
 }

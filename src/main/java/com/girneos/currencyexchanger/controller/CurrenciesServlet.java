@@ -47,12 +47,11 @@ public class CurrenciesServlet extends HttpServlet {
         String fullName = req.getParameter("name");
         String sign = req.getParameter("sign");
 
-        if(code == null || fullName == null || sign == null){
+        if (code == null || fullName == null || sign == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
             resp.getWriter().write(new Gson().toJson(new Message("Отсутствует нужное поле формы")));
-        }else {
-
+        } else {
             try {
                 service = new CurrencyService();
 
@@ -64,17 +63,15 @@ public class CurrenciesServlet extends HttpServlet {
                 resp.getWriter().write(new Gson().toJson(currency));
 
             } catch (ClassNotFoundException | SQLException e) {
-                if (e.getMessage().startsWith("[SQLITE_CONSTRAINT_UNIQUE]")){
+                if (e.getMessage().startsWith("[SQLITE_CONSTRAINT_UNIQUE]")) {
                     resp.setStatus(HttpServletResponse.SC_CONFLICT);
                     resp.getWriter().write(new Gson().toJson(new Message("Валюта с таким кодом уже существует")));
-                }else {
+                } else {
                     resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     resp.getWriter().write(new Gson().toJson(new Message("Ошибка на уровне БД")));
                 }
             }
         }
-
-
     }
 
     public void destroy() {

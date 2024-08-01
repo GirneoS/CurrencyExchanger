@@ -18,11 +18,12 @@ import java.sql.SQLException;
 @WebServlet("/exchangeRate/*")
 public class SingleExchangeRateServlet extends HttpServlet {
     private ExchangeRateService service;
+
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if(req.getMethod().equals("PATCH")){
+        if (req.getMethod().equals("PATCH")) {
             doPatch(req, resp);
-        }else{
+        } else {
             super.service(req, resp);
         }
     }
@@ -35,10 +36,10 @@ public class SingleExchangeRateServlet extends HttpServlet {
         String pathInfo = req.getPathInfo();
         String strRate = pathInfo.substring(1);
 
-        if(strRate.isEmpty()){
+        if (strRate.isEmpty()) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write(new Gson().toJson(new Message("Коды валют пары отсутствуют в адресе")));
-        }else {
+        } else {
             try {
                 service = new ExchangeRateService();
                 ExchangeRate exchangeRate = service.get(strRate);
@@ -65,7 +66,7 @@ public class SingleExchangeRateServlet extends HttpServlet {
         try {
             String strRateParam;
 
-            try(BufferedReader reader = req.getReader()) {
+            try (BufferedReader reader = req.getReader()) {
                 strRateParam = reader.readLine().split("=")[1];
             }
 
@@ -78,7 +79,7 @@ public class SingleExchangeRateServlet extends HttpServlet {
                 service = new ExchangeRateService();
                 double newRate = Double.parseDouble(strRateParam);
 
-                ExchangeRate updatedRate = service.update(pathInfo.substring(1),newRate);
+                ExchangeRate updatedRate = service.update(pathInfo.substring(1), newRate);
 
                 resp.setStatus(HttpServletResponse.SC_OK);
 

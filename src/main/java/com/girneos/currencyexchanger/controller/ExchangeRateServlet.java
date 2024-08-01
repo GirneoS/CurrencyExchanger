@@ -17,6 +17,7 @@ import java.util.List;
 @WebServlet("/exchangeRates")
 public class ExchangeRateServlet extends HttpServlet {
     private ExchangeRateService service;
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("text/json");
@@ -61,10 +62,10 @@ public class ExchangeRateServlet extends HttpServlet {
                 resp.getWriter().write(json);
 
             } catch (ClassNotFoundException | SQLException e) {
-                if(e.getMessage().startsWith("[SQLITE_CONSTRAINT_UNIQUE]")){
+                if (e.getMessage().startsWith("[SQLITE_CONSTRAINT_UNIQUE]")) {
                     resp.setStatus(HttpServletResponse.SC_CONFLICT);
                     resp.getWriter().write(new Gson().toJson(new Message("Валютная пара с таким кодом уже существует")));
-                }else {
+                } else {
                     resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     resp.getWriter().write(new Gson().toJson(new Message("Ошибка при получении данных из БД")));
                 }

@@ -35,7 +35,7 @@ public class ExchangeOperationService {
             convertedAmount = BigDecimal.valueOf(amount * exchangeRate.getRate());
         }
 
-        ExchangeOperation exchangeOperation = new ExchangeOperation(baseCurrency, targetCurrency, convertedAmount.doubleValue()/amount, amount, convertedAmount);
+        ExchangeOperation exchangeOperation = new ExchangeOperation(baseCurrency, targetCurrency, convertedAmount.doubleValue() / amount, amount, convertedAmount);
 
         return exchangeOperation;
 
