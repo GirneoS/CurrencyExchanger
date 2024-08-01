@@ -1,7 +1,6 @@
 package com.girneos.currencyexchanger.controller;
 
 import com.girneos.currencyexchanger.dao.CurrencyDAO;
-import com.girneos.currencyexchanger.dao.DAO;
 import com.girneos.currencyexchanger.model.Message;
 import com.girneos.currencyexchanger.service.CurrencyService;
 import com.google.gson.Gson;

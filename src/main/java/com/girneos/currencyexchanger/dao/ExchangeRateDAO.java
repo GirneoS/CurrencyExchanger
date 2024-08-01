@@ -8,13 +8,12 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExchangeRateDAO implements DAO<ExchangeRate>{
+public class ExchangeRateDAO {
     private final String url = "jdbc:sqlite:/Users/mak/IdeaProjects/CurrencyExchanger/src/main/resources/my-database.db";
     public ExchangeRateDAO() throws ClassNotFoundException {
         Class.forName("org.sqlite.JDBC");
     }
 
-    @Override
     public List<ExchangeRate> getAll() throws SQLException, ClassNotFoundException {
         List<ExchangeRate> listOfRates = new ArrayList<>();
 
@@ -53,16 +52,15 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
         return listOfRates;
     }
 
-    @Override
     public ExchangeRate get(String reqCode) throws SQLException, ClassNotFoundException {
         List<ExchangeRate> rateList = getAll();
 
         ExchangeRate rate = rateList.stream()
                 .filter(r -> r.toString().equals(reqCode))
                 .findAny()
-                .orElse(new ExchangeRate(new Currency("", "", ""), new Currency("", "", ""), 0));
+                .orElse(null);
 
-        if (rate.getBaseCurrency().getCode().isEmpty()) {
+        if (rate == null) {
             StringBuilder revNameRate = new StringBuilder();
 
             revNameRate.append(reqCode, 3, reqCode.length());
@@ -81,7 +79,6 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
         return rate;
     }
 
-    @Override
     public ExchangeRate update(ExchangeRate exchangeRate, double rate) throws SQLException {
         ExchangeRate updatedExchangeRate = null;
         try(Connection connection = DriverManager.getConnection(url)) {
@@ -113,35 +110,32 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
         return updatedExchangeRate;
     }
 
-    @Override
-    public boolean save(ExchangeRate exchangeRate) throws SQLException {
-        boolean result = false;
-
+    public ExchangeRate save(ExchangeRate exchangeRate) throws SQLException {
         try(Connection connection = DriverManager.getConnection(url)) {
 
             exchangeRate.setID(getLastId()+1);
+            int id = exchangeRate.getID();
             int baseCurrencyID = exchangeRate.getBaseCurrency().getId();
             int targetCurrencyID = exchangeRate.getTargetCurrency().getId();
             double rate = exchangeRate.getRate();
 
 
-            String query = "INSERT INTO ExchangeRates(BaseCurrencyID, TargetCurrencyID, Rate) " +
-                    "VALUES (?, ?, ?)";
+            String query = "INSERT INTO ExchangeRates " +
+                    "VALUES (?, ?, ?, ?)";
 
             PreparedStatement statement = connection.prepareStatement(query);
 
-            statement.setInt(1,baseCurrencyID);
-            statement.setInt(2,targetCurrencyID);
-            statement.setDouble(3,rate);
+            statement.setInt(1, id);
+            statement.setInt(2,baseCurrencyID);
+            statement.setInt(3,targetCurrencyID);
+            statement.setDouble(4,rate);
 
-            if(statement.executeUpdate()>0){
-                result = true;
-            }
+            statement.executeUpdate();
+
+            return exchangeRate;
         }
-        return result;
     }
 
-    @Override
     public int getLastId() throws SQLException {
         int lastID = -2;
         try(Connection connection = DriverManager.getConnection(url)) {

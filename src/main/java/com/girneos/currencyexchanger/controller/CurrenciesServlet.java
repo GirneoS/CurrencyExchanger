@@ -8,7 +8,6 @@ import com.girneos.currencyexchanger.dao.CurrencyDAO;
 import com.girneos.currencyexchanger.model.Message;
 import com.girneos.currencyexchanger.service.CurrencyService;
 import com.google.gson.Gson;
-import com.girneos.currencyexchanger.dao.DAO;
 import com.girneos.currencyexchanger.model.Currency;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
@@ -29,17 +28,11 @@ public class CurrenciesServlet extends HttpServlet {
             service = new CurrencyService();
             List<Currency> list = service.getAll();
 
-            if (list.isEmpty()){
+            Gson gson = new Gson();
+            String jsonResponse = gson.toJson(list);
 
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                resp.getWriter().write(new Gson().toJson(new Message("Ошибка")));
-            }else {
+            resp.getWriter().write(jsonResponse);
 
-                Gson gson = new Gson();
-                String jsonResponse = gson.toJson(list);
-
-                resp.getWriter().write(jsonResponse);
-            }
         } catch (ClassNotFoundException | SQLException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.getWriter().write(new Gson().toJson(new Message("Ошибка на уровне БД")));
@@ -57,38 +50,27 @@ public class CurrenciesServlet extends HttpServlet {
         if(code == null || fullName == null || sign == null){
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
-            Message message = new Message("Отсутствует нужное поле формы");
-            resp.getWriter().write(new Gson().toJson(message));
+            resp.getWriter().write(new Gson().toJson(new Message("Отсутствует нужное поле формы")));
         }else {
 
             try {
                 service = new CurrencyService();
 
-                if(service.get(code)!=null){
+                Currency currency = new Currency(code, fullName, sign);
 
-                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                service.save(currency);
 
-                    Message message = new Message("Валюта с таким кодом уже существует");
-                    resp.getWriter().write(new Gson().toJson(message));
+                resp.setStatus(HttpServletResponse.SC_CREATED);
+                resp.getWriter().write(new Gson().toJson(currency));
 
-                }else {
-                    Currency currency = new Currency(code, fullName, sign);
-
-                    if (service.save(currency)) {
-                        resp.setStatus(HttpServletResponse.SC_CREATED);
-
-
-                        resp.getWriter().write(new Gson().toJson(currency));
-                    } else {
-                        resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-
-                        resp.getWriter().write(new Gson().toJson(new Message("Ошибка во время сохранения")));
-                    }
-
-                }
             } catch (ClassNotFoundException | SQLException e) {
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                resp.getWriter().write(new Gson().toJson(new Message("Ошибка на уровне БД")));
+                if (e.getMessage().startsWith("[SQLITE_CONSTRAINT_UNIQUE]")){
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                    resp.getWriter().write(new Gson().toJson(new Message("Валюта с таким кодом уже существует")));
+                }else {
+                    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    resp.getWriter().write(new Gson().toJson(new Message("Ошибка на уровне БД")));
+                }
             }
         }
 

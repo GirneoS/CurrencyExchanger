@@ -1,4 +1,4 @@
-package com.girneos.currencyexchanger.exception;
+package com.girneos.currencyexchanger.model.exception;
 
 public class CurrencyAlreadyExistsException extends Exception{
     public CurrencyAlreadyExistsException(String message) {

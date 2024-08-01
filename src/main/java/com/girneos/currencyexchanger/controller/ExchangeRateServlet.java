@@ -1,13 +1,10 @@
 package com.girneos.currencyexchanger.controller;
 
-import com.girneos.currencyexchanger.dao.CurrencyDAO;
-import com.girneos.currencyexchanger.dao.DAO;
-import com.girneos.currencyexchanger.dao.ExchangeRateDAO;
+import com.girneos.currencyexchanger.model.exception.NoSuchCurrencyException;
 import com.girneos.currencyexchanger.model.ExchangeRate;
 import com.girneos.currencyexchanger.model.Message;
 import com.girneos.currencyexchanger.service.ExchangeRateService;
 import com.google.gson.Gson;
-import com.girneos.currencyexchanger.model.Currency;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,16 +27,10 @@ public class ExchangeRateServlet extends HttpServlet {
 
             List<ExchangeRate> ratesList = service.getAll();
 
-            if(!ratesList.isEmpty()) {
+            Gson gson = new Gson();
+            String textJson = gson.toJson(ratesList);
 
-                Gson gson = new Gson();
-                String textJson = gson.toJson(ratesList);
-
-                resp.getWriter().write(textJson);
-            }else{
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                resp.getWriter().write(new Gson().toJson(new Message("Ошибка")));
-            }
+            resp.getWriter().write(textJson);
         } catch (ClassNotFoundException | SQLException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.getWriter().write(new Gson().toJson(new Message("Ошибка на уровне БД")));
@@ -55,45 +46,32 @@ public class ExchangeRateServlet extends HttpServlet {
         String rate = req.getParameter("rate");
 
 
-        if(baseCode == null || targetCode == null || rate == null){
+        if (baseCode == null || targetCode == null || rate == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write(new Gson().toJson(new Message("Отсутствует нужное поле формы")));
-        }
+        } else {
 
-        try {
-            service = new ExchangeRateService();
+            try {
+                service = new ExchangeRateService();
+                ExchangeRate exchangeRate = service.save(baseCode, targetCode, Double.parseDouble(rate));
 
+                Gson gson = new Gson();
+                String json = gson.toJson(exchangeRate);
 
-            Currency baseCurrency = currencyDAO.get(baseCode);
-            Currency targetCurrency = currencyDAO.get(targetCode);
+                resp.getWriter().write(json);
 
-            if(baseCurrency==null || targetCurrency==null){
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write(new Gson().toJson(new Message("Одна (или обе) валюта из валютной пары не существует в БД")));
-            }else{
-
-                if(exchangeRateDAO.get(baseCode+targetCode)!=null){
+            } catch (ClassNotFoundException | SQLException e) {
+                if(e.getMessage().startsWith("[SQLITE_CONSTRAINT_UNIQUE]")){
                     resp.setStatus(HttpServletResponse.SC_CONFLICT);
                     resp.getWriter().write(new Gson().toJson(new Message("Валютная пара с таким кодом уже существует")));
                 }else {
-
-                    ExchangeRate exchangeRate = new ExchangeRate(baseCurrency, targetCurrency, Double.parseDouble(rate));
-
-                    if (exchangeRateDAO.save(exchangeRate)) {
-                        Gson gson = new Gson();
-                        String json = gson.toJson(exchangeRate);
-
-                        resp.setStatus(HttpServletResponse.SC_CREATED);
-                        resp.getWriter().write(json);
-                    } else {
-                        resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                        resp.getWriter().write(new Gson().toJson(new Message("Ошибка")));
-                    }
+                    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    resp.getWriter().write(new Gson().toJson(new Message("Ошибка при получении данных из БД")));
                 }
+            } catch (NoSuchCurrencyException e) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                resp.getWriter().write(new Gson().toJson(new Message("Одна (или обе) валюта из валютной пары не существует в БД")));
             }
-
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
         }
     }
 

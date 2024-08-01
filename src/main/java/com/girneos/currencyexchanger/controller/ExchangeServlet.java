@@ -1,10 +1,9 @@
 package com.girneos.currencyexchanger.controller;
 
-import com.girneos.currencyexchanger.dao.DAO;
-import com.girneos.currencyexchanger.dao.ExchangeRateDAO;
-import com.girneos.currencyexchanger.model.ExchangeRate;
+import com.girneos.currencyexchanger.model.exception.NoSuchExchangeRateException;
 import com.girneos.currencyexchanger.model.ExchangeOperation;
 import com.girneos.currencyexchanger.model.Message;
+import com.girneos.currencyexchanger.service.ExchangeOperationService;
 import com.google.gson.Gson;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,10 +12,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.math.BigDecimal;
+import java.sql.SQLException;
 
 @WebServlet("/exchange")
 public class ExchangeServlet extends HttpServlet {
+    private ExchangeOperationService service;
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/json");
@@ -29,32 +29,23 @@ public class ExchangeServlet extends HttpServlet {
 
             resp.getWriter().write(new Gson().toJson(new Message("Отсутствует нужное поле формы")));
         }else{
-            double amount = Double.parseDouble(amountStr);
+            try {
+                double amount = Double.parseDouble(amountStr);
+                service = new ExchangeOperationService();
 
-            DAO<ExchangeRate> exchangeRateDAO = new ExchangeRateDAO();
-
-            ExchangeRate exchangeRate = exchangeRateDAO.get(from+to);
-            if(exchangeRate==null){
-                ExchangeRate exchangeRateFrom = exchangeRateDAO.get(from+"USD");
-                ExchangeRate exchangeRateTo = exchangeRateDAO.get("USD"+to);
-
-                BigDecimal convertedAmount = BigDecimal.valueOf(exchangeRateFrom.getRate()*amount*exchangeRateTo.getRate());
-                ExchangeOperation exchangeOperation = new ExchangeOperation(exchangeRateFrom.getBaseCurrency(), exchangeRateTo.getTargetCurrency(), convertedAmount.doubleValue()/amount, amount, convertedAmount);
+                ExchangeOperation operation = service.makeExchange(from, to, amount);
 
                 Gson gson = new Gson();
-                String json = gson.toJson(exchangeOperation);
+                String json = gson.toJson(operation);
 
                 resp.getWriter().write(json);
 
-            }else{
-
-                BigDecimal convertedAmount = BigDecimal.valueOf(amount * exchangeRate.getRate());
-                ExchangeOperation exchangeOperation = new ExchangeOperation(exchangeRate.getBaseCurrency(),exchangeRate.getTargetCurrency(),exchangeRate.getRate(),amount,convertedAmount);
-
-                Gson gson = new Gson();
-                String json = gson.toJson(exchangeOperation);
-
-                resp.getWriter().write(json);
+            } catch (ClassNotFoundException | SQLException e) {
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                resp.getWriter().write(new Gson().toJson(new Message("Ошибка при получении данных из БД")));
+            } catch (NoSuchExchangeRateException e) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                resp.getWriter().write(new Gson().toJson(new Message("Недостаточно информации для совершения обмена")));
             }
         }
     }

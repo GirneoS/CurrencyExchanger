@@ -6,13 +6,12 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CurrencyDAO implements DAO<Currency> {
+public class CurrencyDAO {
     private final String url = "jdbc:sqlite:/Users/mak/IdeaProjects/CurrencyExchanger/src/main/resources/my-database.db";
     public CurrencyDAO() throws ClassNotFoundException {
         Class.forName("org.sqlite.JDBC");
     }
 
-    @Override
     public List<Currency> getAll() throws SQLException {
         List<Currency> currencyList = new ArrayList<>();
         try(Connection connection = DriverManager.getConnection(url)) {
@@ -37,7 +36,6 @@ public class CurrencyDAO implements DAO<Currency> {
         return currencyList;
     }
 
-    @Override
     public Currency get(String reqCode) throws SQLException {
         Currency reqCurrency = null;
         try(Connection connection = DriverManager.getConnection(url)){
@@ -60,37 +58,28 @@ public class CurrencyDAO implements DAO<Currency> {
         return reqCurrency;
     }
 
-    @Override
-    public Currency update(Currency currency, double rate) {
-        return null;
-    }
-
-    @Override
-    public boolean save(Currency currency) throws SQLException {
-        boolean result = false;
+    public void save(Currency currency) throws SQLException {
         try(Connection connection = DriverManager.getConnection(url)){
 
+            currency.setId(getLastId()+1);
+
+            int id = currency.getId();
             String code = currency.getCode();
             String fullName = currency.getName();
             String sign = currency.getSign();
 
-            String query = "INSERT INTO Currencies(Code, FullName, Sign) VALUES (?,?,?)";
+            String query = "INSERT INTO Currencies VALUES (?,?,?,?)";
             PreparedStatement statement = connection.prepareStatement(query);
 
-            statement.setString(1,code);
-            statement.setString(2,fullName);
-            statement.setString(3,sign);
+            statement.setInt(1,id);
+            statement.setString(2,code);
+            statement.setString(3,fullName);
+            statement.setString(4,sign);
 
-
-            currency.setId(getLastId()+1);
-            if(statement.executeUpdate()>0){
-                result = true;
-            }
+            statement.executeUpdate();
         }
-        return result;
     }
 
-    @Override
     public int getLastId() {
         int lastID = -1;
         try(Connection connection = DriverManager.getConnection(url)) {
