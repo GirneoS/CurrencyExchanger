@@ -1,7 +1,7 @@
 package com.girneos.currencyexchanger.controller;
 
-import com.girneos.currencyexchanger.controller.dao.DAO;
-import com.girneos.currencyexchanger.controller.dao.ExchangeRateDAO;
+import com.girneos.currencyexchanger.dao.DAO;
+import com.girneos.currencyexchanger.dao.ExchangeRateDAO;
 import com.girneos.currencyexchanger.model.ExchangeRate;
 import com.girneos.currencyexchanger.model.ExchangeOperation;
 import com.girneos.currencyexchanger.model.Message;
@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 
 @WebServlet("/exchange")
 public class ExchangeServlet extends HttpServlet {
@@ -37,8 +38,8 @@ public class ExchangeServlet extends HttpServlet {
                 ExchangeRate exchangeRateFrom = exchangeRateDAO.get(from+"USD");
                 ExchangeRate exchangeRateTo = exchangeRateDAO.get("USD"+to);
 
-                double convertedAmount = exchangeRateFrom.getRate()*amount*exchangeRateTo.getRate();
-                ExchangeOperation exchangeOperation = new ExchangeOperation(exchangeRateFrom.getBaseCurrency(), exchangeRateTo.getTargetCurrency(), convertedAmount/amount, amount, convertedAmount);
+                BigDecimal convertedAmount = BigDecimal.valueOf(exchangeRateFrom.getRate()*amount*exchangeRateTo.getRate());
+                ExchangeOperation exchangeOperation = new ExchangeOperation(exchangeRateFrom.getBaseCurrency(), exchangeRateTo.getTargetCurrency(), convertedAmount.doubleValue()/amount, amount, convertedAmount);
 
                 Gson gson = new Gson();
                 String json = gson.toJson(exchangeOperation);
@@ -47,7 +48,7 @@ public class ExchangeServlet extends HttpServlet {
 
             }else{
 
-                double convertedAmount = amount* exchangeRate.getRate();
+                BigDecimal convertedAmount = BigDecimal.valueOf(amount * exchangeRate.getRate());
                 ExchangeOperation exchangeOperation = new ExchangeOperation(exchangeRate.getBaseCurrency(),exchangeRate.getTargetCurrency(),exchangeRate.getRate(),amount,convertedAmount);
 
                 Gson gson = new Gson();

@@ -1,2 +1,7 @@
-package com.girneos.currencyexchanger.exception;public class CurrencyNotFoundException {
+package com.girneos.currencyexchanger.exception;
+
+public class CurrencyNotFoundException extends Exception {
+    public CurrencyNotFoundException(String message) {
+        super(message);
+    }
 }

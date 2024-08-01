@@ -1,4 +1,4 @@
-package com.girneos.currencyexchanger.controller.dao;
+package com.girneos.currencyexchanger.dao;
 
 import com.girneos.currencyexchanger.model.Currency;
 
@@ -8,16 +8,12 @@ import java.util.List;
 
 public class CurrencyDAO implements DAO<Currency> {
     private final String url = "jdbc:sqlite:/Users/mak/IdeaProjects/CurrencyExchanger/src/main/resources/my-database.db";
-    public CurrencyDAO() {
-        try {
-            Class.forName("org.sqlite.JDBC");
-        }catch(ClassNotFoundException e ){
-            e.printStackTrace();
-        }
+    public CurrencyDAO() throws ClassNotFoundException {
+        Class.forName("org.sqlite.JDBC");
     }
 
     @Override
-    public List<Currency> getAll() {
+    public List<Currency> getAll() throws SQLException {
         List<Currency> currencyList = new ArrayList<>();
         try(Connection connection = DriverManager.getConnection(url)) {
 
@@ -36,15 +32,13 @@ public class CurrencyDAO implements DAO<Currency> {
 
                 currencyList.add(currency);
             }
-        }catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return currencyList;
     }
 
     @Override
-    public Currency get(String reqCode) {
+    public Currency get(String reqCode) throws SQLException {
         Currency reqCurrency = null;
         try(Connection connection = DriverManager.getConnection(url)){
             PreparedStatement statement = connection.prepareStatement("SELECT * FROM Currencies WHERE Code = ?");
@@ -62,8 +56,6 @@ public class CurrencyDAO implements DAO<Currency> {
                 reqCurrency = new Currency(code, fullName, sign);
                 reqCurrency.setId(id);
             }
-        }catch(SQLException e){
-            e.printStackTrace();
         }
         return reqCurrency;
     }
@@ -74,7 +66,7 @@ public class CurrencyDAO implements DAO<Currency> {
     }
 
     @Override
-    public boolean save(Currency currency) {
+    public boolean save(Currency currency) throws SQLException {
         boolean result = false;
         try(Connection connection = DriverManager.getConnection(url)){
 
@@ -94,8 +86,6 @@ public class CurrencyDAO implements DAO<Currency> {
             if(statement.executeUpdate()>0){
                 result = true;
             }
-        }catch (SQLException e){
-            e.printStackTrace();
         }
         return result;
     }

@@ -1,7 +1,7 @@
 package com.girneos.currencyexchanger.controller;
 
-import com.girneos.currencyexchanger.controller.dao.DAO;
-import com.girneos.currencyexchanger.controller.dao.ExchangeRateDAO;
+import com.girneos.currencyexchanger.dao.DAO;
+import com.girneos.currencyexchanger.dao.ExchangeRateDAO;
 import com.girneos.currencyexchanger.model.Message;
 import com.google.gson.Gson;
 import com.girneos.currencyexchanger.model.ExchangeRate;
@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 
 @WebServlet("/exchangeRate/*")
@@ -56,7 +57,13 @@ public class SingleExchangeRateServlet extends HttpServlet {
         DAO<ExchangeRate> exchangeRateDAO = new ExchangeRateDAO();
         ExchangeRate exchangeRate = exchangeRateDAO.get(pathInfo.substring(1));
 
-        String strRateParam = req.getParameter("rate");
+
+
+        String strRateParam;
+
+        try(BufferedReader reader = req.getReader()) {
+            strRateParam = reader.readLine().split("=")[1];
+        }
 
         if (strRateParam == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);

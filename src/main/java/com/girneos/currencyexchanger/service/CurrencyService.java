@@ -8,9 +8,10 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class CurrencyService {
-    private final DAO<Currency> currencyDao = new CurrencyDAO();
+    private final DAO<Currency> currencyDao;
 
     public CurrencyService() throws ClassNotFoundException {
+        currencyDao = new CurrencyDAO();
     }
 
     public List<Currency> getAll() throws SQLException {

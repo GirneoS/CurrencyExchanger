@@ -1,26 +1,29 @@
 package com.girneos.currencyexchanger.model;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 public class ExchangeOperation {
     private Currency baseCurrency;
     private Currency targetCurrency;
     private double rate;
     private double amount;
-    private double convertedAmount;
+    private BigDecimal convertedAmount;
 
 
-    public ExchangeOperation(Currency baseCurrency, Currency targetCurrency, double rate, double amount, double convertedAmount) {
+    public ExchangeOperation(Currency baseCurrency, Currency targetCurrency, double rate, double amount, BigDecimal convertedAmount) {
         this.baseCurrency = baseCurrency;
         this.targetCurrency = targetCurrency;
         this.rate = rate;
         this.amount = amount;
-        this.convertedAmount = convertedAmount;
+        this.convertedAmount = convertedAmount.setScale(2, RoundingMode.DOWN);
     }
 
     public double getAmount() {
         return amount;
     }
 
-    public double getConvertedAmount() {
+    public BigDecimal getConvertedAmount() {
         return convertedAmount;
     }
 

@@ -1,5 +1,7 @@
 package com.girneos.currencyexchanger.model;
 
+import java.math.BigDecimal;
+
 public class ExchangeRate {
     private int ID;
     private Currency baseCurrency;

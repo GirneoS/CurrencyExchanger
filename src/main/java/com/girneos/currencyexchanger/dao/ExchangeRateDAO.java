@@ -1,7 +1,8 @@
-package com.girneos.currencyexchanger.controller.dao;
+package com.girneos.currencyexchanger.dao;
 
 import com.girneos.currencyexchanger.model.Currency;
 import com.girneos.currencyexchanger.model.ExchangeRate;
+import com.girneos.currencyexchanger.service.CurrencyService;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -9,16 +10,12 @@ import java.util.List;
 
 public class ExchangeRateDAO implements DAO<ExchangeRate>{
     private final String url = "jdbc:sqlite:/Users/mak/IdeaProjects/CurrencyExchanger/src/main/resources/my-database.db";
-    public ExchangeRateDAO() {
-        try {
-            Class.forName("org.sqlite.JDBC");
-        }catch(ClassNotFoundException e ){
-            e.printStackTrace();
-        }
+    public ExchangeRateDAO() throws ClassNotFoundException {
+        Class.forName("org.sqlite.JDBC");
     }
 
     @Override
-    public List<ExchangeRate> getAll() {
+    public List<ExchangeRate> getAll() throws SQLException, ClassNotFoundException {
         List<ExchangeRate> listOfRates = new ArrayList<>();
 
         try(Connection connection = DriverManager.getConnection(url)) {
@@ -32,8 +29,8 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
                 double rate = resultSet.getDouble("Rate");
 
 
-                CurrencyDAO currencyDAO = new CurrencyDAO();
-                List<Currency> listOfCurrencies = currencyDAO.getAll();
+                CurrencyService service = new CurrencyService();
+                List<Currency> listOfCurrencies = service.getAll();
 
                 Currency baseCurrency = listOfCurrencies.stream()
                         .filter(c->c.getId()==baseCurrencyID)
@@ -51,15 +48,13 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
                 listOfRates.add(exchangeRate);
             }
 
-        }catch(SQLException e){
-            e.printStackTrace();
         }
 
         return listOfRates;
     }
 
     @Override
-    public ExchangeRate get(String reqCode) {
+    public ExchangeRate get(String reqCode) throws SQLException, ClassNotFoundException {
         List<ExchangeRate> rateList = getAll();
 
         ExchangeRate rate = rateList.stream()
@@ -87,7 +82,7 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
     }
 
     @Override
-    public ExchangeRate update(ExchangeRate exchangeRate, double rate) {
+    public ExchangeRate update(ExchangeRate exchangeRate, double rate) throws SQLException {
         ExchangeRate updatedExchangeRate = null;
         try(Connection connection = DriverManager.getConnection(url)) {
 
@@ -113,15 +108,13 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
                     updatedExchangeRate = exchangeRate;
                 }
             }
-        }catch(SQLException e){
-            e.printStackTrace();
         }
 
         return updatedExchangeRate;
     }
 
     @Override
-    public boolean save(ExchangeRate exchangeRate) {
+    public boolean save(ExchangeRate exchangeRate) throws SQLException {
         boolean result = false;
 
         try(Connection connection = DriverManager.getConnection(url)) {
@@ -144,14 +137,12 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
             if(statement.executeUpdate()>0){
                 result = true;
             }
-        }catch(SQLException e){
-            e.printStackTrace();
         }
         return result;
     }
 
     @Override
-    public int getLastId() {
+    public int getLastId() throws SQLException {
         int lastID = -2;
         try(Connection connection = DriverManager.getConnection(url)) {
             Statement statement = connection.createStatement();
@@ -160,8 +151,6 @@ public class ExchangeRateDAO implements DAO<ExchangeRate>{
             resultSet.next();
 
             lastID = resultSet.getInt("last_ID");
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         return lastID;
     }

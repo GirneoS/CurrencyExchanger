@@ -3,12 +3,12 @@ package com.girneos.currencyexchanger.model;
 public class Currency {
     private int id;
     private String code;
-    private String fullName;
+    private String name;
     private String sign;
 
-    public Currency(String code, String fullName, String sign) {
+    public Currency(String code, String name, String sign) {
         this.code = code;
-        this.fullName = fullName;
+        this.name = name;
         this.sign = sign;
     }
 
@@ -16,8 +16,8 @@ public class Currency {
         return code;
     }
 
-    public String getFullName() {
-        return fullName;
+    public String getName() {
+        return name;
     }
 
     public String getSign() {
