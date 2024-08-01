@@ -79,7 +79,7 @@ public class CurrencyDAO implements DAO<Currency> {
         try(Connection connection = DriverManager.getConnection(url)){
 
             String code = currency.getCode();
-            String fullName = currency.getFullName();
+            String fullName = currency.getName();
             String sign = currency.getSign();
 
             String query = "INSERT INTO Currencies(Code, FullName, Sign) VALUES (?,?,?)";
