@@ -1,6 +1,5 @@
 package com.girneos.currencyexchanger.controller;
 
-import com.girneos.currencyexchanger.dao.CurrencyDAO;
 import com.girneos.currencyexchanger.model.Message;
 import com.girneos.currencyexchanger.model.exception.NoSuchCurrencyException;
 import com.girneos.currencyexchanger.service.CurrencyService;
@@ -13,8 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Objects;
 
 @WebServlet("/currency/*")
 public class SingleCurrencyServlet extends HttpServlet {

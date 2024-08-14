@@ -4,11 +4,13 @@ import com.girneos.currencyexchanger.model.exception.NoSuchCurrencyException;
 import com.girneos.currencyexchanger.model.ExchangeRate;
 import com.girneos.currencyexchanger.model.Message;
 import com.girneos.currencyexchanger.service.ExchangeRateService;
+import com.girneos.currencyexchanger.utils.Utils;
 import com.google.gson.Gson;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jdk.jshell.execution.Util;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -54,7 +56,7 @@ public class ExchangeRateServlet extends HttpServlet {
 
             try {
                 service = new ExchangeRateService();
-                ExchangeRate exchangeRate = service.save(baseCode, targetCode, Double.parseDouble(rate));
+                ExchangeRate exchangeRate = service.save(baseCode, targetCode, Utils.parseBigDecimal(rate));
 
                 Gson gson = new Gson();
                 String json = gson.toJson(exchangeRate);

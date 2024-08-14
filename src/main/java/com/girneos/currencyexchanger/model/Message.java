@@ -5,7 +5,7 @@ public class Message {
         this.message = message;
     }
 
-    private String message = "Ошибка";
+    private String message;
 
     public String getMessage() {
         return message;

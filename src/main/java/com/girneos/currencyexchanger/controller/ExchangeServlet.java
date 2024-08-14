@@ -4,6 +4,7 @@ import com.girneos.currencyexchanger.model.exception.NoSuchExchangeRateException
 import com.girneos.currencyexchanger.model.ExchangeOperation;
 import com.girneos.currencyexchanger.model.Message;
 import com.girneos.currencyexchanger.service.ExchangeOperationService;
+import com.girneos.currencyexchanger.utils.Utils;
 import com.google.gson.Gson;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -12,11 +13,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 
 @WebServlet("/exchange")
 public class ExchangeServlet extends HttpServlet {
-    private ExchangeOperationService service;
+    private ExchangeOperationService exchangeService;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -26,15 +28,14 @@ public class ExchangeServlet extends HttpServlet {
         String amountStr = req.getParameter("amount");
 
         if (from == null || to == null || amountStr == null) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new Gson().toJson(new Message("Отсутствует нужное поле формы")));
 
-            resp.getWriter().write(new Gson().toJson(new Message("Отсутствует нужное поле формы")));
         } else {
             try {
-                double amount = Double.parseDouble(amountStr);
-                service = new ExchangeOperationService();
+                BigDecimal amount = Utils.parseBigDecimal(amountStr);
+                exchangeService = new ExchangeOperationService();
 
-                ExchangeOperation operation = service.makeExchange(from, to, amount);
+                ExchangeOperation operation = exchangeService.makeExchange(from, to, amount);
 
                 Gson gson = new Gson();
                 String json = gson.toJson(operation);
@@ -42,11 +43,12 @@ public class ExchangeServlet extends HttpServlet {
                 resp.getWriter().write(json);
 
             } catch (ClassNotFoundException | SQLException e) {
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                resp.getWriter().write(new Gson().toJson(new Message("Ошибка при получении данных из БД")));
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        new Gson().toJson(new Message("Ошибка при получении данных из БД")));
+
             } catch (NoSuchExchangeRateException e) {
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write(new Gson().toJson(new Message("Недостаточно информации для совершения обмена")));
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND, new Gson().toJson(new Message("Недостаточно информации для совершения обмена")));
+
             }
         }
     }

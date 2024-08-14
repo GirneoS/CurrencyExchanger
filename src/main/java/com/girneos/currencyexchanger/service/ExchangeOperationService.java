@@ -12,33 +12,37 @@ import java.sql.SQLException;
 
 public class ExchangeOperationService {
     private CurrencyDAO currencyDAO;
-    private ExchangeRateDAO exchangeRateDAO;
+    private ExchangeRateService exchangeRateService;
 
-    public ExchangeOperation makeExchange(String from, String to, double amount) throws ClassNotFoundException, SQLException, NoSuchExchangeRateException {
+    public ExchangeOperation makeExchange(String from, String to, BigDecimal amount) throws ClassNotFoundException, SQLException, NoSuchExchangeRateException {
         currencyDAO = new CurrencyDAO();
-        exchangeRateDAO = new ExchangeRateDAO();
 
         Currency baseCurrency = currencyDAO.get(from);
         Currency targetCurrency = currencyDAO.get(to);
 
-        ExchangeRate exchangeRate = exchangeRateDAO.get(from + to);
-        BigDecimal convertedAmount;
-        if (exchangeRate == null) {
-            ExchangeRate baseExchangeRate = exchangeRateDAO.get(from + "USD");
-            ExchangeRate targetExchangeRate = exchangeRateDAO.get("USD" + to);
+        BigDecimal convertedAmount = amount.multiply(getRate(from,to));
 
-            if (baseExchangeRate == null || targetExchangeRate == null) {
-                throw new NoSuchExchangeRateException("Невозможно совершить обмен между указанными валютами");
-            }
-            convertedAmount = BigDecimal.valueOf(amount * baseExchangeRate.getRate() * targetExchangeRate.getRate());
-        } else {
-            convertedAmount = BigDecimal.valueOf(amount * exchangeRate.getRate());
-        }
 
-        ExchangeOperation exchangeOperation = new ExchangeOperation(baseCurrency, targetCurrency, convertedAmount.doubleValue() / amount, amount, convertedAmount);
-
-        return exchangeOperation;
+        return new ExchangeOperation(baseCurrency, targetCurrency, convertedAmount.divide(amount), amount, convertedAmount);
 
     }
+    //метод для поиска нужного rate при обмене
+    private BigDecimal getRate(String from, String to) throws ClassNotFoundException, SQLException, NoSuchExchangeRateException {
+        exchangeRateService = new ExchangeRateService();
+
+        try {
+
+            ExchangeRate exchangeRate = exchangeRateService.get(from, to);
+            return exchangeRate.getRate();
+
+        } catch (NoSuchExchangeRateException e) {
+            ExchangeRate baseExchangeRate = exchangeRateService.get(from,"USD");
+            ExchangeRate targetExchangeRate = exchangeRateService.get("USD",to);
+
+            return baseExchangeRate.getRate().multiply(targetExchangeRate.getRate());
+        }
+
+    }
+
 
 }
