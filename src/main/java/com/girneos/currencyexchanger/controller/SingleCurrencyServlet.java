@@ -19,12 +19,12 @@ public class SingleCurrencyServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
+        resp.addHeader("Content-Type","application/json;charset=UTF-8");
 
         if (req.getPathInfo().isEmpty() || req.getPathInfo().equals("/")) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(new Gson().toJson(new Message("Код валюты отсутствует в адресе")));
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    new Gson().toJson(new Message("Код валюты отсутствует в адресе")));
+
         } else {
 
             String pathInfo = req.getPathInfo();
@@ -40,11 +40,13 @@ public class SingleCurrencyServlet extends HttpServlet {
 
                 resp.getWriter().write(json);
             } catch (ClassNotFoundException | SQLException e) {
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                resp.getWriter().write(new Gson().toJson(new Message("Ошибка на уровне БД")));
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        new Gson().toJson(new Message("Ошибка на уровне БД")));
+
             } catch (NoSuchCurrencyException e) {
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write(new Gson().toJson(new Message("Валюта не найдена")));
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND,
+                        new Gson().toJson(new Message("Валюта не найдена")));
+
             }
         }
     }

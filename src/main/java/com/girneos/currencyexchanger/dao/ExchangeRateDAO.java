@@ -12,6 +12,7 @@ import java.math.RoundingMode;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionHandler;
 
 public class ExchangeRateDAO {
     private final String url = "jdbc:sqlite:/Users/mak/IdeaProjects/CurrencyExchanger/src/main/resources/my-database.db";
@@ -91,7 +92,6 @@ public class ExchangeRateDAO {
             throw new RuntimeException(e);
         }
     }
-
     public ExchangeRate update(ExchangeRate exchangeRate, BigDecimal rate) throws SQLException {
         ExchangeRate updatedExchangeRate = null;
         try (Connection connection = DriverManager.getConnection(url)) {

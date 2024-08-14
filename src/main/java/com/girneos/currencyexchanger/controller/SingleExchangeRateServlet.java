@@ -32,38 +32,37 @@ public class SingleExchangeRateServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("text/json");
-        resp.setCharacterEncoding("UTF-8");
+        resp.addHeader("Content-Type","application/json;charset=UTF-8");
 
         String pathInfo = req.getPathInfo();
-        System.out.println(pathInfo);
         String strRate = pathInfo.substring(1);
 
         if (strRate.isEmpty()) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(new Gson().toJson(new Message("Коды валют пары отсутствуют в адресе")));
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    new Gson().toJson(new Message("Коды валют пары отсутствуют в адресе")));
+
         } else {
             try {
                 exchangeRateService = new ExchangeRateService();
                 ExchangeRate exchangeRate = exchangeRateService.get(strRate.substring(0,3),strRate.substring(3));
 
-                resp.setStatus(HttpServletResponse.SC_OK);
                 String jsonResp = new Gson().toJson(exchangeRate);
                 resp.getWriter().write(jsonResp);
 
             } catch (ClassNotFoundException | SQLException e) {
-                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                resp.getWriter().write(new Gson().toJson(new Message("Ошибка на при получении данных БД")));
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        new Gson().toJson(new Message("Ошибка на при получении данных БД")));
 
             } catch (NoSuchExchangeRateException e) {
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write(new Gson().toJson(new Message("Обменный курс для пары не найден")));
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND,
+                        new Gson().toJson(new Message("Обменный курс для пары не найден")));
+
             }
         }
     }
 
     protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("text/json");
+        resp.addHeader("Content-Type","application/json;charset=UTF-8");
 
         String pathInfo = req.getPathInfo();
         String code = pathInfo.substring(1);
@@ -72,33 +71,29 @@ public class SingleExchangeRateServlet extends HttpServlet {
             String strRateParam;
 
             try (BufferedReader reader = req.getReader()) {
-//                System.out.println(reader.readLine());
                 strRateParam = reader.readLine().split("=")[1];
-                System.out.println(strRateParam);
             }
 
-            if (strRateParam == null) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            if (strRateParam == null || strRateParam.isEmpty()) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                        new Gson().toJson(new Message("Отсутствует нужное поле формы")));
 
-                resp.getWriter().write(new Gson().toJson(new Message("Отсутствует нужное поле формы")));
             } else {
-
                 exchangeRateService = new ExchangeRateService();
                 BigDecimal newRate = Utils.parseBigDecimal(strRateParam);
 
                 ExchangeRate updatedRate = exchangeRateService.update(code.substring(0,3), code.substring(3), newRate);
 
-                resp.setStatus(HttpServletResponse.SC_OK);
-
                 String json = new Gson().toJson(updatedRate);
                 resp.getWriter().write(json);
             }
         } catch (ClassNotFoundException | SQLException e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write(new Gson().toJson(new Message("Ошибка на уровне БД")));
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    new Gson().toJson(new Message("Ошибка на уровне БД")));
+
         } catch (NoSuchExchangeRateException e) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            resp.getWriter().write(new Gson().toJson(new Message("Валютная пара отсутствует в базе данных")));
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND,
+                    new Gson().toJson(new Message("Валютная пара отсутствует в базе данных")));
         }
     }
 

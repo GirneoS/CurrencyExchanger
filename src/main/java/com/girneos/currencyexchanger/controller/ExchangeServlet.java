@@ -22,13 +22,15 @@ public class ExchangeServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("text/json");
+        resp.addHeader("Content-Type","application/json;charset=UTF-8");
+
         String from = req.getParameter("from");
         String to = req.getParameter("to");
         String amountStr = req.getParameter("amount");
 
-        if (from == null || to == null || amountStr == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, new Gson().toJson(new Message("Отсутствует нужное поле формы")));
+        if (!Utils.isValidExchangeArgs(from,to,amountStr)) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    new Gson().toJson(new Message("Отсутствует нужное поле формы")));
 
         } else {
             try {
@@ -47,7 +49,8 @@ public class ExchangeServlet extends HttpServlet {
                         new Gson().toJson(new Message("Ошибка при получении данных из БД")));
 
             } catch (NoSuchExchangeRateException e) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND, new Gson().toJson(new Message("Недостаточно информации для совершения обмена")));
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND,
+                        new Gson().toJson(new Message("Недостаточно информации для совершения обмена")));
 
             }
         }

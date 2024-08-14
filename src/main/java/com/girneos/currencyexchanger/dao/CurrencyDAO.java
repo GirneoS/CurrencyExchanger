@@ -12,7 +12,6 @@ public class CurrencyDAO {
     public CurrencyDAO() throws ClassNotFoundException {
         Class.forName("org.sqlite.JDBC");
     }
-
     public List<Currency> getAll() throws SQLException {
         List<Currency> currencyList = new ArrayList<>();
         try (Connection connection = DriverManager.getConnection(url)) {
@@ -80,6 +79,7 @@ public class CurrencyDAO {
             statement.executeUpdate();
         }
     }
+
 
     public int getLastId() {
         int lastID = -1;
