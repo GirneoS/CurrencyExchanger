@@ -12,6 +12,7 @@ import java.math.RoundingMode;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.RejectedExecutionHandler;
 
 public class ExchangeRateDAO {
@@ -59,13 +60,14 @@ public class ExchangeRateDAO {
         return listOfRates;
     }
 
-    public ExchangeRate get(String baseCurrencyCode, String targetCurrencyCode) throws SQLException, ClassNotFoundException {
+    public Optional<ExchangeRate> get(String baseCurrencyCode, String targetCurrencyCode) throws SQLException, ClassNotFoundException {
         String query = "SELECT rates.id, rates.rate, c.code as baseCode, c2.code as targetCode FROM ExchangeRates as rates " +
                 "JOIN Currencies as c on rates.BaseCurrencyId = c.ID " +
                 "JOIN Currencies as c2 on rates.TargetCurrencyId = c2.ID " +
                 "WHERE c.code=? AND c2.code=?";
 
 
+        ExchangeRate exchangeRate = null;
         try(Connection connection = DriverManager.getConnection(url)) {
             PreparedStatement statement = connection.prepareStatement(query);
 
@@ -78,22 +80,22 @@ public class ExchangeRateDAO {
             CurrencyService currencyService = new CurrencyService();
 
             if(resultSet.getString("baseCode")!=null && resultSet.getString("targetCode")!=null) {
+
                 Currency baseCurrency = currencyService.get(resultSet.getString("baseCode"));
                 Currency targetCurrency = currencyService.get(resultSet.getString("targetCode"));
                 BigDecimal rate = resultSet.getBigDecimal("rate");
 
 
-                ExchangeRate exchangeRate =  new ExchangeRate(baseCurrency, targetCurrency, rate);
+                exchangeRate =  new ExchangeRate(baseCurrency, targetCurrency, rate);
                 exchangeRate.setID(resultSet.getInt("ID"));
-                return exchangeRate;
             }
-            return null;
+            return Optional.ofNullable(exchangeRate);
+
         } catch (NoSuchCurrencyException e) {
             throw new RuntimeException(e);
         }
     }
-    public ExchangeRate update(ExchangeRate exchangeRate, BigDecimal rate) throws SQLException {
-        ExchangeRate updatedExchangeRate = null;
+    public void update(ExchangeRate exchangeRate, BigDecimal rate) throws SQLException {
         try (Connection connection = DriverManager.getConnection(url)) {
 
             String query = "UPDATE ExchangeRates SET Rate=? WHERE ID=?";
@@ -102,10 +104,9 @@ public class ExchangeRateDAO {
             statement.setBigDecimal(1, rate);
             statement.setInt(2, exchangeRate.getID());
 
-            if (statement.executeUpdate() > 0) {
+            if (statement.executeUpdate() > 0)
                 exchangeRate.setRate(rate);
-                updatedExchangeRate = exchangeRate;
-            } else {
+            else {
                 String reverseQuery = "UPDATE ExchangeRates SET Rate=? " +
                         "WHERE BaseCurrencyId=? AND TargetCurrencyId=?";
                 PreparedStatement reverseStatement = connection.prepareStatement(reverseQuery);
@@ -114,14 +115,11 @@ public class ExchangeRateDAO {
                 reverseStatement.setInt(2, exchangeRate.getTargetCurrency().getId());
                 reverseStatement.setInt(3, exchangeRate.getBaseCurrency().getId());
 
-                if (reverseStatement.executeUpdate() > 0) {
+                if (reverseStatement.executeUpdate() > 0)
                     exchangeRate.setRate(rate);
-                    updatedExchangeRate = exchangeRate;
-                }
+
             }
         }
-
-        return updatedExchangeRate;
     }
 
     public ExchangeRate save(ExchangeRate exchangeRate) throws SQLException {

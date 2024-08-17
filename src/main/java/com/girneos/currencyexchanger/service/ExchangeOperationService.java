@@ -2,6 +2,7 @@ package com.girneos.currencyexchanger.service;
 
 import com.girneos.currencyexchanger.dao.CurrencyDAO;
 import com.girneos.currencyexchanger.dao.ExchangeRateDAO;
+import com.girneos.currencyexchanger.model.exception.NoSuchCurrencyException;
 import com.girneos.currencyexchanger.model.exception.NoSuchExchangeRateException;
 import com.girneos.currencyexchanger.model.Currency;
 import com.girneos.currencyexchanger.model.ExchangeOperation;
@@ -17,13 +18,14 @@ public class ExchangeOperationService {
     public ExchangeOperation makeExchange(String from, String to, BigDecimal amount) throws ClassNotFoundException, SQLException, NoSuchExchangeRateException {
         currencyDAO = new CurrencyDAO();
 
-        Currency baseCurrency = currencyDAO.get(from);
-        Currency targetCurrency = currencyDAO.get(to);
+        Currency baseCurrency = currencyDAO.get(from).orElseThrow(NoSuchCurrencyException::new);
+        Currency targetCurrency = currencyDAO.get(to).orElseThrow();
 
         BigDecimal convertedAmount = amount.multiply(getRate(from,to));
 
 
-        return new ExchangeOperation(baseCurrency, targetCurrency, convertedAmount.divide(amount), amount, convertedAmount);
+        return new ExchangeOperation(baseCurrency, targetCurrency,
+                convertedAmount.divide(amount), amount, convertedAmount);
 
     }
     //метод для поиска нужного rate при обмене

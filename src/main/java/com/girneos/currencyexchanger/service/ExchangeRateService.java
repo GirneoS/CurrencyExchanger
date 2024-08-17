@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 public class ExchangeRateService {
     private ExchangeRateDAO exchangeRateDAO;
@@ -23,30 +24,32 @@ public class ExchangeRateService {
     }
 
     public ExchangeRate get(String baseCurrencyCode, String targetCurrencyCode) throws SQLException, ClassNotFoundException, NoSuchExchangeRateException {
-        ExchangeRate exchangeRate = exchangeRateDAO.get(baseCurrencyCode, targetCurrencyCode);
-        if (exchangeRate==null) {
-            exchangeRate = exchangeRateDAO.get(targetCurrencyCode, baseCurrencyCode);
-            if (exchangeRate!=null) {
+        Optional<ExchangeRate> optional = exchangeRateDAO.get(baseCurrencyCode, targetCurrencyCode);
+
+        if (optional.isEmpty()) {
+            optional = exchangeRateDAO.get(targetCurrencyCode, baseCurrencyCode);
+            if (optional.isPresent()) {
                 //если получилось найти обратную валютную пару, то создаем нужную на ее основе
+                ExchangeRate exchangeRate = optional.get();
+
                 Currency baseCurrency = exchangeRate.getTargetCurrency();
                 Currency targetCurrency = exchangeRate.getBaseCurrency();
                 BigDecimal rate = BigDecimal.ONE.divide(exchangeRate.getRate(), 6, RoundingMode.HALF_EVEN);
                 return new ExchangeRate(baseCurrency, targetCurrency, rate);
-            }
-        }
-        if (exchangeRate==null)
-            throw new NoSuchExchangeRateException();
-        return exchangeRate;
+            }else
+                throw new NoSuchExchangeRateException();
+        }else
+            return optional.get();
+
     }
 
     public ExchangeRate update(String baseCurrencyCode, String targetCurrencyCode, BigDecimal rate) throws SQLException, ClassNotFoundException, NoSuchExchangeRateException {
-        ExchangeRate exchangeRate = exchangeRateDAO.get(baseCurrencyCode, targetCurrencyCode);
+        Optional<ExchangeRate> optional = exchangeRateDAO.get(baseCurrencyCode, targetCurrencyCode);
 
-        if(exchangeRate == null)
-            throw new NoSuchExchangeRateException();
-        else{
-            exchangeRateDAO.update(exchangeRate, rate);
-        }
+        ExchangeRate exchangeRate = optional.orElseGet(()->optional.orElseThrow(NoSuchExchangeRateException::new));
+
+        exchangeRateDAO.update(exchangeRate, rate);
+
         return exchangeRate;
 
     }
@@ -57,12 +60,8 @@ public class ExchangeRateService {
         Currency baseCurrency = currencyService.get(baseCode);
         Currency targetCurrency = currencyService.get(targetCode);
 
-        if(baseCurrency == null || targetCurrency == null){
-            throw new NoSuchCurrencyException("Одна(или две) валюта из пары не существует в БД");
-        }else {
-            ExchangeRate exchangeRate = new ExchangeRate(baseCurrency, targetCurrency, rate);
+        ExchangeRate exchangeRate = new ExchangeRate(baseCurrency, targetCurrency, rate);
 
-            return exchangeRateDAO.save(exchangeRate);
-        }
+        return exchangeRateDAO.save(exchangeRate);
     }
 }

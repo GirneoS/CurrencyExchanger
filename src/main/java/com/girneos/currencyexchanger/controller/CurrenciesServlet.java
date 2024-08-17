@@ -51,25 +51,25 @@ public class CurrenciesServlet extends HttpServlet {
         if (!Utils.isValidCurrencyArgs(code,fullName,sign)) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
                     new Gson().toJson(new Message("Отсутствует нужное поле формы")));
-        } else {
-            try {
-                service = new CurrencyService();
+            return;
+        }
 
-                Currency currency = new Currency(code, fullName, sign);
+        try {
+            service = new CurrencyService();
+            Currency currency = new Currency(code, fullName, sign);
 
-                service.save(currency);
+            service.save(currency);
 
-                resp.getWriter().write(new Gson().toJson(currency));
+            resp.getWriter().write(new Gson().toJson(currency));
 
-            } catch (ClassNotFoundException | SQLException e) {
-                if (e.getMessage().startsWith("[SQLITE_CONSTRAINT_UNIQUE]")) {
-                    resp.sendError(HttpServletResponse.SC_CONFLICT,
-                            new Gson().toJson(new Message("Валюта с таким кодом уже существует")));
+        } catch (ClassNotFoundException | SQLException e) {
+            if (e.getMessage().startsWith("[SQLITE_CONSTRAINT_UNIQUE]")) {
+                resp.sendError(HttpServletResponse.SC_CONFLICT,
+                        new Gson().toJson(new Message("Валюта с таким кодом уже существует")));
 
-                } else {
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                            new Gson().toJson(new Message("Ошибка на уровне БД")));
-                }
+            } else {
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        new Gson().toJson(new Message("Ошибка на уровне БД")));
             }
         }
     }

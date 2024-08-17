@@ -6,6 +6,7 @@ import com.girneos.currencyexchanger.model.exception.NoSuchCurrencyException;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 public class CurrencyService {
     private final CurrencyDAO currencyDao;
@@ -19,12 +20,9 @@ public class CurrencyService {
     }
 
     public Currency get(String code) throws SQLException, NoSuchCurrencyException {
-        Currency currency = currencyDao.get(code);
+        Optional<Currency> optionalCurrency = currencyDao.get(code);
 
-        if (currency==null)
-            throw new NoSuchCurrencyException("Валюты с таким кодом не существует в БД");
-
-        return currencyDao.get(code);
+        return optionalCurrency.orElseGet(() -> optionalCurrency.orElseThrow(NoSuchCurrencyException::new));
     }
 
     public void save(Currency currency) throws SQLException {

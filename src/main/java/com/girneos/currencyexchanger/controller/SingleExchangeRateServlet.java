@@ -70,6 +70,12 @@ public class SingleExchangeRateServlet extends HttpServlet {
         try {
             String strRateParam;
 
+            if(req.getReader()==null){
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                        new Gson().toJson(new Message("Отсутствует нужное поле формы")));
+                return;
+            }
+
             try (BufferedReader reader = req.getReader()) {
                 strRateParam = reader.readLine().split("=")[1];
             }

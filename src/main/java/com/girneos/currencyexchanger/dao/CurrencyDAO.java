@@ -5,6 +5,7 @@ import com.girneos.currencyexchanger.model.Currency;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class CurrencyDAO {
     private final String url = "jdbc:sqlite:/Users/mak/IdeaProjects/CurrencyExchanger/src/main/resources/my-database.db";
@@ -36,7 +37,7 @@ public class CurrencyDAO {
         return currencyList;
     }
 
-    public Currency get(String reqCode) throws SQLException {
+    public Optional<Currency> get(String reqCode) throws SQLException {
         Currency reqCurrency = null;
         try (Connection connection = DriverManager.getConnection(url)) {
             PreparedStatement statement = connection.prepareStatement("SELECT * FROM Currencies WHERE Code = ?");
@@ -52,10 +53,12 @@ public class CurrencyDAO {
                 String sign = resultSet.getString("Sign");
 
                 reqCurrency = new Currency(code, fullName, sign);
+
                 reqCurrency.setId(id);
             }
+
+            return Optional.ofNullable(reqCurrency);
         }
-        return reqCurrency;
     }
 
     public void save(Currency currency) throws SQLException {
